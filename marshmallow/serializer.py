@@ -228,7 +228,7 @@ class BaseSerializer(base.SerializerABC):
             return dictionary.
         '''
         # Convert obj to a dict
-        obj_marshallable = utils.to_marshallable_type(self.obj)
+        obj_marshallable = utils.to_marshallable_type(self.obj, field_names)
         if obj_marshallable and self.many:
             try:  # Homogeneous collection
                 obj_dict = utils.to_marshallable_type(obj_marshallable[0])

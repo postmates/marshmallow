@@ -53,7 +53,7 @@ def float_to_decimal(f):
     return result
 
 
-def to_marshallable_type(obj):
+def to_marshallable_type(obj, field_names):
     """Helper for converting an object to a dictionary only if it is not
     dictionary already or an indexable object nor a simple type"""
     if obj is None:
@@ -68,8 +68,7 @@ def to_marshallable_type(obj):
     if isinstance(obj, types.GeneratorType):
         return list(obj)
 
-    return dict([(name, getattr(obj, name, None))  for name in dir(obj)
-                if not name.startswith("__") and not name.endswith("__")])
+    return dict([(name, getattr(obj, name, None)) for name in field_names])
 
 
 
