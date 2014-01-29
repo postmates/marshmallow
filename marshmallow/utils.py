@@ -70,6 +70,9 @@ def to_marshallable_type(obj, field_names):
 
     d = {}
     for name in field_names:
+        # NOTE(petergx): we use hasattr instead of getattr with a default,
+        # because it avoids the ObjectDoesNotExist exception with Django
+        # OneToOneFields.
         if hasattr(obj, name):
             d[name] = getattr(obj, name)
         else:
