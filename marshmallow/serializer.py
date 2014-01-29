@@ -146,7 +146,7 @@ class BaseSerializer(base.SerializerABC):
         pass
 
     def __init__(self, obj=None, extra=None, only=None,
-                exclude=None, prefix='', strict=False, many=False):
+                exclude=None, prefix='', strict=False, many=False, include=None):
         if not many and utils.is_collection(obj):
             warnings.warn('Implicit collection handling is deprecated. Set '
                             'many=True to serialize a collection.',
@@ -160,6 +160,7 @@ class BaseSerializer(base.SerializerABC):
         self.opts = SerializerOpts(self.Meta)
         self.only = only or ()
         self.exclude = exclude or ()
+        self.include = include or ()
         self.prefix = prefix
         self.strict = strict or self.opts.strict
         #: Callable marshalling object
@@ -192,7 +193,10 @@ class BaseSerializer(base.SerializerABC):
             # Return declared fields + additional fields
             field_names = set(self.declared_fields.keys()) | set(self.opts.additional)
         else:
-            field_names = set(self.declared_fields.keys())
+            if self.include:
+                field_names = set(self.declared_fields.keys()) | set(self.include)
+            else:
+                field_names = set(self.declared_fields.keys())
 
         # If "exclude" option or param is specified, remove those fields
         excludes = set(self.opts.exclude) | set(self.exclude)
