@@ -10,7 +10,7 @@ import warnings
 
 from marshmallow import base, fields, utils
 from marshmallow.compat import (with_metaclass, iteritems, text_type,
-                                binary_type, OrderedDict)
+                                binary_type)
 
 
 class SerializerMeta(type):
@@ -25,7 +25,7 @@ class SerializerMeta(type):
 
     @classmethod
     def get_declared_fields(mcs, bases, attrs, field_class):
-        '''Return the declared fields of a class as an OrderedDict.
+        '''Return the declared fields of a class as a dict.
 
         :param tuple bases: Tuple of classes the class is subclassing.
         :param dict attrs: Dictionary of class attributes.
@@ -40,7 +40,7 @@ class SerializerMeta(type):
         for base_class in bases[::-1]:
             if hasattr(base_class, '_declared_fields'):
                 declared = list(base_class._declared_fields.items()) + declared
-        return OrderedDict(declared)
+        return dict(declared)
 
 
 class SerializerOpts(object):
@@ -153,7 +153,7 @@ class BaseSerializer(base.SerializerABC):
                             category=DeprecationWarning)
         # copy declared fields from metaclass
         self.declared_fields = copy.deepcopy(self._declared_fields)
-        self.fields = OrderedDict()
+        self.fields = dict()
         self.__data = None
         self.obj = obj
         self.many = many
@@ -222,7 +222,7 @@ class BaseSerializer(base.SerializerABC):
         '''Return only those field_name:field_obj pairs specified by
         ``field_names``.
 
-        :returns: An OrderedDict of field_name:field_obj pairs.
+        :returns: A dict of field_name:field_obj pairs.
 
         :param set field_names: Field names to include in the final
             return dictionary.
@@ -231,12 +231,13 @@ class BaseSerializer(base.SerializerABC):
         obj_marshallable = utils.to_marshallable_type(self.obj, field_names)
         if obj_marshallable and self.many:
             try:  # Homogeneous collection
-                obj_dict = utils.to_marshallable_type(obj_marshallable[0])
+                obj_dict = utils.to_marshallable_type(
+                    obj_marshallable[0], field_names)
             except IndexError:  # Nothing to serialize
                 return self.declared_fields
         else:
             obj_dict = obj_marshallable
-        ret = OrderedDict()
+        ret = dict()
         for key in field_names:
             if key in self.declared_fields:
                 ret[key] = self.declared_fields[key]
@@ -256,7 +257,7 @@ class BaseSerializer(base.SerializerABC):
 
     @property
     def data(self):
-        '''The serialized data as an ``OrderedDict``.
+        '''The serialized data as a dict.
         '''
         if not self.__data:  # Cache the data
             self.__data = self.marshal(self.obj, self.fields, many=self.many)

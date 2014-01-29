@@ -8,6 +8,7 @@ from calendar import timegm
 import types
 
 from decimal import Decimal, Context, Inexact
+from django.core.exceptions import ObjectDoesNotExist
 from pprint import pprint as py_pprint
 
 from marshmallow.compat import OrderedDict
@@ -68,7 +69,14 @@ def to_marshallable_type(obj, field_names):
     if isinstance(obj, types.GeneratorType):
         return list(obj)
 
-    return dict([(name, getattr(obj, name, None)) for name in field_names])
+    d = {}
+    for name in field_names:
+        try:
+            d[name] = getattr(obj, name, None)
+        except ObjectDoesNotExist:
+            d[name] = None
+
+    return d
 
 
 
@@ -150,11 +158,13 @@ def rfcformat(dt, localtime=False):
 def isoformat(dt, localtime=False, *args, **kwargs):
     '''Return the ISO8601-formatted UTC representation of a datetime object.
     '''
-    if localtime and dt.tzinfo is not None:
-        localized = dt
+    if localtime:
+        if dt.tzinfo is not None:
+            localized = dt
+        return localized.isoformat(*args, **kwargs)
     else:
         if dt.tzinfo is None:
-            localized = UTC.localize(dt)
+            return u'{}Z'.format(dt.isoformat())
         else:
             localized = dt.astimezone(UTC)
-    return localized.isoformat(*args, **kwargs)
+            return localized.isoformat(*args, **kwargs)
