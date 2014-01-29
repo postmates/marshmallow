@@ -193,10 +193,10 @@ class BaseSerializer(base.SerializerABC):
             # Return declared fields + additional fields
             field_names = set(self.declared_fields.keys()) | set(self.opts.additional)
         else:
-            if self.include:
-                field_names = set(self.declared_fields.keys()) | set(self.include)
-            else:
-                field_names = set(self.declared_fields.keys())
+            field_names = set(self.declared_fields.keys())
+
+        if self.include:
+            field_names = field_names | set(self.include)
 
         # If "exclude" option or param is specified, remove those fields
         excludes = set(self.opts.exclude) | set(self.exclude)
