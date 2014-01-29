@@ -11,8 +11,7 @@ from functools import wraps
 
 from marshmallow import validate, utils
 from marshmallow.base import FieldABC, SerializerABC
-from marshmallow.compat import (text_type, OrderedDict, iteritems, total_seconds,
-                                basestring)
+from marshmallow.compat import text_type, iteritems, total_seconds, basestring
 from marshmallow.exceptions import MarshallingError
 
 
@@ -39,7 +38,7 @@ class Marshaller(object):
     :param bool strict: If ``True``, raise errors if invalid data are passed in
         instead of failing silently and storing the errors.
     '''
-    def __init__(self, prefix='', strict=False):
+    def __init__(self, prefix='', strict=True):
         self.prefix = prefix
         self.strict = strict
         self.errors = {}
@@ -53,20 +52,20 @@ class Marshaller(object):
                        response output.
         :param bool many: Set to ``True`` if ``data`` is a collection object
                         that is iterable.
-        :returns: An OrderedDict of the marshalled data
+        :returns: A dict of the marshalled data
         """
         if many and data is not None:
             return [self.marshal(d, fields_dict, many=False) for d in data]
-        items = []
+        out = {}
         for attr_name, field_obj in iteritems(fields_dict):
             key = self.prefix + attr_name
             try:
-                item = (key, field_obj.output(attr_name, data))
+                out[key] = field_obj.output(attr_name, data)
             except MarshallingError as err:  # Store errors
                 if self.strict:
                     raise err
                 self.errors[key] = text_type(err)
-                item = (key, None)
+                out[key] = None
             except TypeError:
                 # field declared as a class, not an instance
                 if isinstance(field_obj, type) and \
@@ -77,8 +76,7 @@ class Marshaller(object):
                                     .format(attr_name, field_obj.__name__))
                     raise TypeError(msg)
                 raise
-            items.append(item)
-        return OrderedDict(items)
+        return out
 
     # Make an instance callable
     __call__ = marshal
@@ -109,9 +107,10 @@ def _get_value_for_key(key, obj, default):
             return obj[key]
         except KeyError:
             return default
-    if hasattr(obj, key):
+    elif hasattr(obj, key):
         return getattr(obj, key)
-    return default
+    else:
+        return default
 
 
 class Raw(FieldABC):
@@ -198,7 +197,7 @@ class Nested(Raw):
     def __get_fields_to_marshal(self, all_fields):
         '''Filter all_fields based on self.only and self.exclude.'''
         # Default 'only' to all the nested fields
-        ret = OrderedDict()
+        ret = {}
         if all_fields is None:
             return ret
         elif isinstance(self.only, basestring):
@@ -211,9 +210,9 @@ class Nested(Raw):
             exclude = set(self.exclude) - only
         else:
             exclude = set([]) if self.exclude is None else set(self.exclude)
-        filtered = ((k, v) for k, v in all_fields.items()
-                    if k in only and k not in exclude)
-        return OrderedDict(filtered)
+        filtered = {k: v for k, v in all_fields.iteritems()
+                    if k in only and k not in exclude}
+        return filtered
 
     @property
     def serializer(self):
@@ -429,7 +428,7 @@ class DateTime(Raw):
 
     @validated
     def format(self, value):
-        self.dateformat = self.dateformat or 'rfc'
+        self.dateformat = self.dateformat or 'iso'
         format_func = DATEFORMAT_FUNCTIONS.get(self.dateformat, None)
         if format_func:
             return format_func(value, localtime=self.localtime)
