@@ -8,7 +8,6 @@ from calendar import timegm
 import types
 
 from decimal import Decimal, Context, Inexact
-from django.core.exceptions import ObjectDoesNotExist
 from pprint import pprint as py_pprint
 
 from marshmallow.compat import OrderedDict
@@ -71,9 +70,9 @@ def to_marshallable_type(obj, field_names):
 
     d = {}
     for name in field_names:
-        try:
-            d[name] = getattr(obj, name, None)
-        except ObjectDoesNotExist:
+        if hasattr(obj, name):
+            d[name] = getattr(obj, name)
+        else:
             d[name] = None
 
     return d
