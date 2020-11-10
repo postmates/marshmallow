@@ -210,7 +210,7 @@ class Nested(Raw):
             exclude = set(self.exclude) - only
         else:
             exclude = set([]) if self.exclude is None else set(self.exclude)
-        filtered = {k: v for k, v in all_fields.iteritems()
+        filtered = {k: v for k, v in iteritems(all_fields)
                     if k in only and k not in exclude}
         return filtered
 
